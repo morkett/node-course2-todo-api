@@ -4,22 +4,21 @@ const jwt = require('jsonwebtoken');
 const _ = require('lodash');
 
 var UserSchema = new mongoose.Schema({
-
   email: {
     type: String,
     required: true,
     trim: true,
-    minLength: 1,
+    minlength: 1,
     unique: true,
     validate: {
       validator: validator.isEmail,
-      message: '{value} is not a valid email'
+      message: '{VALUE} is not a valid email'
     }
   },
   password: {
     type: String,
     require: true,
-    minLength: 6
+    minlength: 6
   },
   tokens: [{
     access: {
@@ -52,9 +51,23 @@ UserSchema.methods.generateAuthToken = function () {
   });
 };
 
+UserSchema.statics.findByToken = function (token) {
+  var User = this;
+  var decoded;
+
+  try {
+    decoded = jwt.verify(token, 'abc123');
+  } catch (e) {
+    return Promise.reject();
+  }
+
+  return User.findOne({
+    '_id': decoded._id,
+    'tokens.token': token,
+    'tokens.access': 'auth'
+  });
+};
+
 var User = mongoose.model('User', UserSchema);
 
-
-module.exports = {
-  User: User
-};
+module.exports = {User}
